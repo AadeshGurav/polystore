@@ -76,8 +76,23 @@ bench --site polystore.localhost execute polystore.demo.seed
 bench start
 ```
 
-Then open **http://polystore.localhost:8000/polystore** for the dashboard, or
-`/app/library-book` in the desk for the DocTypes.
+Then open the desk at **http://polystore.localhost:8000/app/polystore**:
+
+- **Polystore workspace** — shortcuts to the three DocTypes and to the explorer.
+- **Store Explorer** (`/app/polystore-explorer`) — live status of all three
+  engines, the same record shown side by side as MariaDB, MongoDB and Neo4j each
+  hold it, a search over MongoDB keys that have no SQL column, and graph
+  recommendations.
+- **Library Book form** — the MongoDB document is editable inline under *Flexible
+  Attributes*; the *Graph* menu runs the traversals against Neo4j.
+- **Library Member form** — recommendations, and the shortest path between two
+  readers through the books they share.
+
+There is also a public page at **/polystore** for a read-only tour.
+
+If you edit the workspace or page JSON later, `bench migrate` will not overwrite
+what is already in the database — re-import it with
+`bench --site polystore.localhost execute polystore.demo.resync_desk`.
 
 ## Checking it
 

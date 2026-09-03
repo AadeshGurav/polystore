@@ -93,3 +93,26 @@ def _upsert(doctype: str, name: str, values: dict):
 		return document
 
 	return frappe.get_doc({"doctype": doctype, **values}).insert()
+
+
+def resync_desk():
+	"""Force the workspace and desk page definitions back over the database.
+
+	`bench migrate` leaves an existing Workspace alone, so editing the JSON in
+	this app has no effect until it is re-imported:
+
+		bench --site polystore.localhost execute polystore.demo.resync_desk
+	"""
+	from frappe.modules.import_file import import_file_by_path
+
+	paths = [
+		frappe.get_app_path("polystore", "polystore", "workspace", "polystore", "polystore.json"),
+		frappe.get_app_path("polystore", "polystore", "page", "polystore_explorer", "polystore_explorer.json"),
+	]
+
+	for path in paths:
+		import_file_by_path(path, force=True, reset_permissions=True)
+
+	frappe.db.commit()
+	frappe.clear_cache()
+	print("Re-imported workspace and desk page.")

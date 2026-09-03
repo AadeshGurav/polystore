@@ -39,9 +39,6 @@ class LibraryBook(PolyStoreMixin, Document):
 				title=_("Cycle in series"),
 			)
 
-	def onload(self):
-		self.apply_payload()
-
 	def after_insert(self):
 		self.sync_stores()
 

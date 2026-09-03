@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Polystore">
+	<rect width="48" height="48" rx="10" fill="#1f2933"/>
+	<ellipse cx="24" cy="15" rx="12" ry="4.5" fill="none" stroke="#7dd3a0" stroke-width="2"/>
+	<path d="M12 15v8c0 2.5 5.4 4.5 12 4.5s12-2 12-4.5v-8" fill="none" stroke="#7dd3a0" stroke-width="2"/>
+	<circle cx="14" cy="36" r="3.5" fill="#f0a35e"/>
+	<circle cx="34" cy="36" r="3.5" fill="#f0a35e"/>
+	<circle cx="24" cy="29" r="3.5" fill="#f0a35e"/>
+	<path d="M16.8 34.2 21.4 31M31.2 34.2 26.6 31M17.5 36h13" stroke="#f0a35e" stroke-width="1.6" fill="none"/>
+</svg>

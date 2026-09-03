@@ -79,6 +79,24 @@ class PolyStoreMixin:
 
 		return parsed
 
+	def onload(self) -> None:
+		"""Ship the payload to the client.
+
+		Virtual fields are stripped from `as_dict()`, so the form never sees
+		the value unless it travels in `__onload`.
+		"""
+
+		self.set_onload("polystore_payload", self.get(PAYLOAD_FIELD) or "")
+
+	def load_from_db(self) -> None:
+		"""Populate the virtual field on every read, not just in the form.
+
+		Without this, any `frappe.get_doc(...).save()` would write an empty
+		payload back over the document store.
+		"""
+		super().load_from_db()
+		self.apply_payload()
+
 	def apply_payload(self) -> None:
 		"""Populate the virtual field for display from the secondary store."""
 		payload = self.load_payload()

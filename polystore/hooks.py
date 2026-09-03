@@ -306,3 +306,21 @@ require_type_annotated_api_methods = True
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+
+
+# Polystore
+# ------------------
+
+add_to_apps_screen = [
+	{
+		"name": "polystore",
+		"logo": "/assets/polystore/images/logo.svg",
+		"title": "Polystore",
+		"route": "/app/polystore",
+	}
+]
+
+doctype_js = {
+	"Library Book": "public/js/library_book.js",
+	"Library Member": "public/js/library_member.js",
+}
