@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:title",
+ "creation": "2026-09-03 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "author",
+  "isbn",
+  "column_break_meta",
+  "media_type",
+  "status",
+  "follows",
+  "attributes_section",
+  "attributes_help",
+  "attributes_json"
+ ],
+ "fields": [
+  {"fieldname": "title", "fieldtype": "Data", "label": "Title", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "author", "fieldtype": "Data", "label": "Author", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "isbn", "fieldtype": "Data", "label": "ISBN"},
+  {"fieldname": "column_break_meta", "fieldtype": "Column Break"},
+  {"fieldname": "media_type", "fieldtype": "Select", "label": "Media Type", "options": "Book\nEbook\nAudiobook\nJournal", "default": "Book", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Available\nOn Loan", "default": "Available", "in_list_view": 1},
+  {"fieldname": "follows", "fieldtype": "Link", "label": "Follows (previous in series)", "options": "Library Book", "description": "Stored as a FOLLOWS edge in Neo4j. Cycles are rejected on save."},
+  {"fieldname": "attributes_section", "fieldtype": "Section Break", "label": "Flexible Attributes"},
+  {"fieldname": "attributes_help", "fieldtype": "HTML", "options": "<p class='text-muted small'>These attributes are stored in MongoDB, not in a SQL column. Any keys are allowed and they may differ from one record to the next.</p>"},
+  {"fieldname": "attributes_json", "fieldtype": "Code", "label": "Attributes (JSON)", "is_virtual": 1}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-03 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Polystore",
+ "name": "Library Book",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

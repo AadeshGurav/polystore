@@ -1,0 +1,125 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Polystore POC{% endblock %}
+
+{% block head_include %}
+<style>
+	.ps-wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+	.ps-lede { color: #555; max-width: 62ch; }
+	.ps-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+	.ps-card { border: 1px solid #e2e2e0; border-radius: 8px; padding: 16px; background: #fff; }
+	.ps-card h3 { font-size: 16px; margin: 0 0 8px; }
+	.ps-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+		border-radius: 999px; padding: 4px 12px; border: 1px solid transparent; }
+	.ps-ok { background: #e8f5ec; color: #16653a; border-color: #bfe3cd; }
+	.ps-bad { background: #fdeceb; color: #8c1d18; border-color: #f5c6c3; }
+	.ps-section { margin-top: 40px; }
+	.ps-section > h2 { font-size: 20px; margin-bottom: 4px; }
+	.ps-note { color: #666; font-size: 14px; margin-bottom: 16px; }
+	.ps-attrs { background: #f7f7f5; border-radius: 6px; padding: 8px 10px; font-size: 12px;
+		margin: 8px 0 0; white-space: pre-wrap; overflow-x: auto; }
+	.ps-meta { color: #666; font-size: 13px; margin: 0 0 4px; }
+	.ps-list { margin: 4px 0 0 18px; padding: 0; font-size: 14px; }
+	.ps-empty { color: #777; font-size: 14px; font-style: italic; }
+	.ps-chain { font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="ps-wrap">
+	<h1>Polystore</h1>
+	<p class="ps-lede">
+		One Frappe app, three stores. Identity and indexed fields stay in MariaDB;
+		each book's free-form attributes live in MongoDB; who borrowed what, and which
+		book follows which, live in Neo4j.
+	</p>
+
+	<section class="ps-section" aria-labelledby="ps-health">
+		<h2 id="ps-health">Store status</h2>
+		<p class="ps-note">Routing table: {{ health.routing | tojson }}</p>
+		<div class="ps-grid">
+			{% for label, probe in [("MongoDB (documents)", health.document_store), ("Neo4j (graph)", health.graph_store)] %}
+			<div class="ps-card">
+				<h3>{{ label }}</h3>
+				{% if probe.ok %}
+					<span class="ps-badge ps-ok">Connected &middot; v{{ probe.version }}</span>
+				{% else %}
+					<span class="ps-badge ps-bad">Unavailable</span>
+					<p class="ps-meta">{{ probe.error }}</p>
+				{% endif %}
+			</div>
+			{% endfor %}
+		</div>
+	</section>
+
+	<section class="ps-section" aria-labelledby="ps-catalog">
+		<h2 id="ps-catalog">Catalog</h2>
+		<p class="ps-note">
+			Title, author and status come from SQL. Everything in the grey block is a
+			MongoDB document — note that the keys differ from one media type to the next.
+		</p>
+		<div class="ps-grid">
+			{% for book in books %}
+			<article class="ps-card">
+				<h3>{{ book.title }}</h3>
+				<p class="ps-meta">{{ book.author }} &middot; {{ book.media_type }} &middot; {{ book.status }}</p>
+				{% if book.attributes %}
+				<pre class="ps-attrs">{{ book.attributes | tojson(indent=2) }}</pre>
+				{% else %}
+				<p class="ps-empty">No attributes stored.</p>
+				{% endif %}
+			</article>
+			{% endfor %}
+		</div>
+	</section>
+
+	<section class="ps-section" aria-labelledby="ps-people">
+		<h2 id="ps-people">Recommendations</h2>
+		<p class="ps-note">
+			A two-hop Neo4j traversal: readers who borrowed what you borrowed, and what
+			else they took out.
+		</p>
+		<div class="ps-grid">
+			{% for member in members %}
+			<article class="ps-card">
+				<h3>{{ member.member_name }}</h3>
+				<p class="ps-meta">Borrowed: {{ member.borrowed | join(", ") or "nothing yet" }}</p>
+				{% if member.error %}
+					<p class="ps-empty">Graph unavailable: {{ member.error }}</p>
+				{% elif member.recommended %}
+					<ul class="ps-list">
+						{% for suggestion in member.recommended %}
+						<li>{{ suggestion.title }} <span class="ps-meta">({{ suggestion.shared_readers }} shared reader(s))</span></li>
+						{% endfor %}
+					</ul>
+				{% else %}
+					<p class="ps-empty">No suggestions yet.</p>
+				{% endif %}
+			</article>
+			{% endfor %}
+		</div>
+	</section>
+
+	<section class="ps-section" aria-labelledby="ps-series">
+		<h2 id="ps-series">Series order</h2>
+		<p class="ps-note">
+			Transitive closure over FOLLOWS edges, capped at six hops. Saving a book that
+			would close a loop is rejected with the offending path named.
+		</p>
+		{% if series %}
+		<ul class="ps-list ps-chain">
+			{% for chain in series %}
+			<li>
+				<strong>{{ chain.book }}</strong>
+				{% if chain.error %}— graph unavailable: {{ chain.error }}
+				{% else %}&rarr; {{ chain.hops | map(attribute="title") | join(" &rarr; ") | safe or "no predecessors" }}
+				{% endif %}
+			</li>
+			{% endfor %}
+		</ul>
+		{% else %}
+		<p class="ps-empty">No series relationships defined.</p>
+		{% endif %}
+	</section>
+</div>
+{% endblock %}

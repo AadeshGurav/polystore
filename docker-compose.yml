@@ -1,0 +1,25 @@
+# The two secondary stores, for a machine that does not already run them.
+# The Frappe bench itself is expected to run on the host.
+services:
+  mongo:
+    image: mongo:8
+    container_name: polystore-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: polystore-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-neo4jadmin123}
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+volumes:
+  mongo-data:
+  neo4j-data:
