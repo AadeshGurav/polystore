@@ -12,6 +12,8 @@ import json
 
 import frappe
 
+from polystore.graph import traversal
+
 BOOKS = [
 	("Dune", "Frank Herbert", "Book", None, {"pages": 412, "series": "Dune", "themes": ["ecology", "empire"]}),
 	("Dune Messiah", "Frank Herbert", "Book", "Dune", {"pages": 256, "series": "Dune", "themes": ["empire"]}),
@@ -24,10 +26,41 @@ BOOKS = [
 ]
 
 MEMBERS = [
-	("Asha Kulkarni", "asha@example.com"),
-	("Ben Okafor", "ben@example.com"),
-	("Chen Wei", "chen@example.com"),
-	("Diya Nair", "diya@example.com"),
+	(
+		"Asha Kulkarni",
+		"asha@example.com",
+		"+91 98200 11111",
+		"Staff",
+		{"favourite_genres": ["science fiction", "ecology"], "reading_goal_2026": 40, "prefers": "hardback"},
+	),
+	(
+		"Ben Okafor",
+		"ben@example.com",
+		"+91 98200 22222",
+		"Standard",
+		{"favourite_genres": ["cyberpunk"], "newsletter": True, "pickup_branch": "Bandra"},
+	),
+	(
+		"Chen Wei",
+		"chen@example.com",
+		"+91 98200 33333",
+		"Student",
+		{"course": "Comparative Literature", "reading_goal_2026": 25, "accessibility": {"large_print": True}},
+	),
+	(
+		"Diya Nair",
+		"diya@example.com",
+		"+91 98200 44444",
+		"Standard",
+		{"favourite_genres": ["literary fiction"], "audiobook_speed": 1.25},
+	),
+]
+
+# KNOWS edges — these live in Neo4j only, with no SQL row behind them.
+CONNECTIONS = [
+	("Asha Kulkarni", "Ben Okafor"),
+	("Ben Okafor", "Chen Wei"),
+	("Chen Wei", "Diya Nair"),
 ]
 
 LOANS = [
@@ -45,8 +78,21 @@ LOANS = [
 
 def seed():
 	"""Create members, books and loans. Safe to run more than once."""
-	for member_name, email in MEMBERS:
-		_upsert("Library Member", member_name, {"member_name": member_name, "email": email})
+	for member_name, email, phone, membership_type, profile in MEMBERS:
+		_upsert(
+			"Library Member",
+			member_name,
+			{
+				"member_name": member_name,
+				"email": email,
+				"phone": phone,
+				"membership_type": membership_type,
+				"attributes_json": json.dumps(profile, indent=2),
+			},
+		)
+
+	for left, right in CONNECTIONS:
+		traversal.connect_members(left, right)
 
 	for title, author, media_type, follows, attributes in BOOKS:
 		_upsert(
@@ -82,7 +128,10 @@ def seed():
 		).insert()
 
 	frappe.db.commit()
-	print(f"Seeded {len(MEMBERS)} members, {len(BOOKS)} books, {len(LOANS)} loans.")
+	print(
+		f"Seeded {len(MEMBERS)} members, {len(BOOKS)} books, {len(LOANS)} loans, "
+		f"{len(CONNECTIONS)} member connections."
+	)
 
 
 def _upsert(doctype: str, name: str, values: dict):

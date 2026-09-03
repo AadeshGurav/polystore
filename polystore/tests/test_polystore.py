@@ -22,20 +22,23 @@ class PolystoreTestCase(IntegrationTestCase):
 	"""
 
 	def tearDown(self):
-		store = store_for("Library Book")
-		if not store:
-			return
+		for doctype in ("Library Book", "Library Member"):
+			store = store_for(doctype)
+			if not store:
+				continue
 
-		for payload in store.find("Library Book", {}, limit=200):
-			name = payload.get("_name") or ""
-			if name.startswith("Test "):
-				store.delete("Library Book", name)
+			for payload in store.find(doctype, {}, limit=200):
+				name = payload.get("_name") or ""
+				if name.startswith("Test "):
+					store.delete(doctype, name)
 
 
 class TestDocumentStoreRouting(PolystoreTestCase):
-	def test_library_book_is_routed_to_mongo(self):
+	def test_routing_is_opt_in_per_doctype(self):
 		self.assertEqual(backend_for("Library Book"), "mongo")
-		self.assertIsNone(backend_for("Library Member"))
+		self.assertEqual(backend_for("Library Member"), "mongo")
+		# Book Loan is not in the routing table, so it stays purely relational.
+		self.assertIsNone(backend_for("Book Loan"))
 
 	def test_attributes_land_in_mongo_not_sql(self):
 		book = _make_book("Test Atlas", {"pages": 12, "colour": "blue"})
@@ -113,8 +116,55 @@ def _make_book(title: str, attributes: dict, follows: str | None = None):
 	).insert()
 
 
-def _make_member(member_name: str):
+def _make_member(member_name: str, profile: dict | None = None):
 	if frappe.db.exists("Library Member", member_name):
-		return frappe.get_doc("Library Member", member_name)
+		frappe.delete_doc("Library Member", member_name, force=True)
 
-	return frappe.get_doc({"doctype": "Library Member", "member_name": member_name}).insert()
+	return frappe.get_doc(
+		{
+			"doctype": "Library Member",
+			"member_name": member_name,
+			"membership_type": "Standard",
+			"attributes_json": json.dumps(profile or {}),
+		}
+	).insert()
+
+
+class TestMemberAcrossStores(PolystoreTestCase):
+	def test_member_is_routed_to_mongo(self):
+		self.assertEqual(backend_for("Library Member"), "mongo")
+
+	def test_profile_lands_in_mongo_not_sql(self):
+		member = _make_member("Test Profiled", {"favourite_genres": ["poetry"], "reading_goal_2026": 12})
+
+		payload = store_for("Library Member").get("Library Member", member.name)
+		self.assertEqual(payload["favourite_genres"], ["poetry"])
+
+		columns = {
+			field.fieldname for field in frappe.get_meta("Library Member").fields if not field.is_virtual
+		}
+		self.assertNotIn("attributes_json", columns)
+		self.assertIn("membership_type", columns)
+
+	def test_connection_lives_only_in_the_graph(self):
+		first = _make_member("Test Reader One")
+		second = _make_member("Test Reader Two")
+
+		traversal.connect_members(first.name, second.name)
+		names = [row["name"] for row in traversal.connections(first.name)]
+		self.assertIn(second.name, names)
+
+		traversal.disconnect_members(first.name, second.name)
+		self.assertNotIn(second.name, [row["name"] for row in traversal.connections(first.name)])
+
+	def test_friends_of_friends_skips_direct_links(self):
+		a = _make_member("Test Hub A")
+		b = _make_member("Test Hub B")
+		c = _make_member("Test Hub C")
+
+		traversal.connect_members(a.name, b.name)
+		traversal.connect_members(b.name, c.name)
+
+		suggestions = {row["name"] for row in traversal.friends_of_friends(a.name)}
+		self.assertIn(c.name, suggestions)
+		self.assertNotIn(b.name, suggestions)

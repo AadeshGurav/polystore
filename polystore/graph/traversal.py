@@ -150,3 +150,61 @@ def delete_book(name: str) -> None:
 
 def delete_member(name: str) -> None:
 	run("MATCH (m:Member {name: $name}) DETACH DELETE m", {"name": name})
+
+
+def sync_member_profile(name: str, member_name: str, membership_type: str | None) -> None:
+	"""Keep the node's own properties in step with the SQL row."""
+	run(
+		"MERGE (m:Member {name: $name}) SET m.member_name = $member_name, m.membership_type = $membership_type",
+		{"name": name, "member_name": member_name, "membership_type": membership_type or "Standard"},
+	)
+
+
+def connect_members(member: str, other: str) -> None:
+	"""An undirected acquaintance edge, written once in each direction's view."""
+	if member == other:
+		return
+
+	run(
+		"""
+		MATCH (a:Member {name: $member}), (b:Member {name: $other})
+		MERGE (a)-[:KNOWS]-(b)
+		""",
+		{"member": member, "other": other},
+	)
+
+
+def disconnect_members(member: str, other: str) -> None:
+	run(
+		"MATCH (:Member {name: $member})-[r:KNOWS]-(:Member {name: $other}) DELETE r",
+		{"member": member, "other": other},
+	)
+
+
+def connections(member: str) -> list[dict]:
+	"""Everyone this member is directly linked to."""
+	return run(
+		"""
+		MATCH (:Member {name: $member})-[:KNOWS]-(other:Member)
+		RETURN other.name AS name, other.member_name AS member_name,
+			other.membership_type AS membership_type
+		ORDER BY member_name
+		""",
+		{"member": member},
+	)
+
+
+def friends_of_friends(member: str, limit: int = 5) -> list[dict]:
+	"""Two hops out: people this member does not know yet, ranked by mutuals."""
+	return run(
+		"""
+		MATCH (me:Member {name: $member})-[:KNOWS]-(mutual:Member)-[:KNOWS]-(candidate:Member)
+		WHERE candidate <> me AND NOT (me)-[:KNOWS]-(candidate)
+		RETURN candidate.name AS name, candidate.member_name AS member_name,
+			count(DISTINCT mutual) AS mutuals,
+			collect(DISTINCT mutual.member_name)[0..3] AS through
+		ORDER BY mutuals DESC, member_name
+		LIMIT $limit
+		""",
+		{"member": member, "limit": int(limit)},
+	)

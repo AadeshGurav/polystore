@@ -18,6 +18,7 @@ class PolystoreExplorer {
 			<div class="ps-explorer">
 				<div class="ps-status row"></div>
 				<div class="ps-record"></div>
+				<div class="ps-member-record"></div>
 				<div class="row">
 					<div class="col-md-6 ps-search"></div>
 					<div class="col-md-6 ps-graph"></div>
@@ -27,6 +28,7 @@ class PolystoreExplorer {
 
 		this.inject_styles();
 		this.build_record_panel();
+		this.build_member_panel();
 		this.build_search_panel();
 		this.build_graph_panel();
 	}
@@ -54,6 +56,7 @@ class PolystoreExplorer {
 		frappe.call("polystore.api.health.status").then((r) => this.render_status(r.message || {}));
 		frappe.call("polystore.api.catalog.stats").then((r) => this.render_stats(r.message || {}));
 		if (this.book) this.load_record(this.book);
+		if (this.member_name) this.load_member(this.member_name);
 	}
 
 	render_status(health) {
@@ -189,6 +192,80 @@ class PolystoreExplorer {
 						   <div class="ps-kv"><span>follows</span>${(graph.follows || []).join(", ") || "—"}</div>
 						   <div class="ps-kv"><span>followed by</span>${(graph.followed_by || []).join(", ") || "—"}</div>
 						   <div class="ps-kv"><span>series chain</span>${chain || "—"}</div>`
+				}
+			</div>
+		`);
+	}
+
+	build_member_panel() {
+		const $panel = $(`
+			<div class="ps-panel">
+				<h5>A member, split three ways</h5>
+				<p class="ps-hint">Contact and membership details are SQL columns. The reader profile is a MongoDB document. Who they know is a set of Neo4j edges with no SQL row behind it.</p>
+				<div class="ps-member-picker" style="max-width:320px"></div>
+				<div class="row ps-member-three" style="margin-top:10px"></div>
+			</div>
+		`).appendTo(this.$body.find(".ps-member-record"));
+
+		this.member_picker = frappe.ui.form.make_control({
+			parent: $panel.find(".ps-member-picker"),
+			df: {
+				fieldtype: "Link",
+				options: "Library Member",
+				label: "Member",
+				onchange: () => {
+					const value = this.member_picker.get_value();
+					if (value) this.load_member(value);
+				},
+			},
+			render_input: true,
+		});
+
+		frappe.db.get_list("Library Member", { limit: 1, order_by: "member_name" }).then((rows) => {
+			if (rows && rows.length) this.member_picker.set_value(rows[0].name);
+		});
+	}
+
+	load_member(member) {
+		this.member_name = member;
+		frappe
+			.call("polystore.api.catalog.member_across_stores", { member })
+			.then((r) => this.render_member(r.message || {}));
+	}
+
+	render_member(data) {
+		const sql = data.sql || {};
+		const graph = data.graph || {};
+		const rows = ["member_name", "email", "phone", "membership_type", "joined_on", "status"]
+			.map((key) => `<div class="ps-kv"><span>${key}</span>${frappe.utils.escape_html(String(sql[key] || "—"))}</div>`)
+			.join("");
+
+		const knows = (graph.knows || []).map((row) => frappe.utils.escape_html(row.member_name)).join(", ");
+		const suggested = (graph.suggestions || [])
+			.map((row) => `${frappe.utils.escape_html(row.member_name)} (${row.mutuals})`)
+			.join(", ");
+
+		this.$body.find(".ps-member-three").html(`
+			<div class="col-md-4">
+				<div class="ps-engine">MariaDB <span class="text-muted">tabLibrary Member</span></div>
+				${rows}
+			</div>
+			<div class="col-md-4">
+				<div class="ps-engine">MongoDB <span class="text-muted">polystore.library_member</span></div>
+				${
+					Object.keys(data.mongo || {}).length
+						? `<pre class="ps-json">${frappe.utils.escape_html(JSON.stringify(data.mongo, null, 2))}</pre>`
+						: `<p class="ps-empty">No profile document.</p>`
+				}
+			</div>
+			<div class="col-md-4">
+				<div class="ps-engine">Neo4j <span class="text-muted">graph</span></div>
+				${
+					data.graph_error
+						? `<p class="ps-empty">${frappe.utils.escape_html(data.graph_error)}</p>`
+						: `<div class="ps-kv"><span>knows</span>${knows || "—"}</div>
+						   <div class="ps-kv"><span>2 hops out</span>${suggested || "—"}</div>
+						   <div class="ps-kv"><span>borrowed</span>${frappe.utils.escape_html((graph.borrowed || []).join(", ")) || "—"}</div>`
 				}
 			</div>
 		`);

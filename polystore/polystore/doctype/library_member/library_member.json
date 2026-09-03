@@ -5,11 +5,122 @@
  "creation": "2026-09-03 10:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": ["member_name", "email", "joined_on"],
+ "field_order": [
+  "member_name",
+  "email",
+  "phone",
+  "column_break_main",
+  "membership_type",
+  "joined_on",
+  "status",
+  "profile_section",
+  "profile_help",
+  "edit_attributes_btn",
+  "attributes_json",
+  "links_section",
+  "links_help",
+  "manage_connections_btn",
+  "known_members",
+  "suggested_members"
+ ],
  "fields": [
-  {"fieldname": "member_name", "fieldtype": "Data", "label": "Member Name", "reqd": 1, "unique": 1, "in_list_view": 1},
-  {"fieldname": "email", "fieldtype": "Data", "label": "Email", "options": "Email", "in_list_view": 1},
-  {"fieldname": "joined_on", "fieldtype": "Date", "label": "Joined On", "default": "Today"}
+  {
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "label": "Member Name",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "membership_type",
+   "fieldtype": "Select",
+   "label": "Membership Type",
+   "options": "Standard\nStudent\nStaff",
+   "default": "Standard",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "joined_on",
+   "fieldtype": "Date",
+   "label": "Joined On",
+   "default": "Today"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nSuspended",
+   "default": "Active",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "profile_section",
+   "fieldtype": "Section Break",
+   "label": "Reader Profile (MongoDB)"
+  },
+  {
+   "fieldname": "profile_help",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted small'>Preferences with no fixed shape - favourite genres, reading goals, accessibility needs. Stored as a MongoDB document, so no two members need the same keys.</p>"
+  },
+  {
+   "fieldname": "edit_attributes_btn",
+   "fieldtype": "Button",
+   "label": "Edit Profile"
+  },
+  {
+   "fieldname": "attributes_json",
+   "fieldtype": "Code",
+   "label": "Profile (JSON)",
+   "is_virtual": 1,
+   "description": "Read-only here because this field has no SQL column. Use Edit Profile to write to MongoDB."
+  },
+  {
+   "fieldname": "links_section",
+   "fieldtype": "Section Break",
+   "label": "Connections (Neo4j)"
+  },
+  {
+   "fieldname": "links_help",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted small'>Reader-to-reader links live only as KNOWS edges in Neo4j - there is no child table and no join table behind them.</p>"
+  },
+  {
+   "fieldname": "manage_connections_btn",
+   "fieldtype": "Button",
+   "label": "Manage Connections"
+  },
+  {
+   "fieldname": "known_members",
+   "fieldtype": "Small Text",
+   "label": "Knows",
+   "is_virtual": 1
+  },
+  {
+   "fieldname": "suggested_members",
+   "fieldtype": "Small Text",
+   "label": "Friends of friends",
+   "is_virtual": 1,
+   "description": "Two hops out in the graph - people this member does not know yet."
+  }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
@@ -19,7 +130,18 @@
  "name": "Library Member",
  "owner": "Administrator",
  "permissions": [
-  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1}
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",

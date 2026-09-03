@@ -13,8 +13,17 @@ The demo domain is a small library.
 | Engine | What it holds | Why there |
 | --- | --- | --- |
 | MariaDB | Book, member and loan rows — identity, links, indexed fields | Existence record; permissions, list views and reports all work unchanged |
-| MongoDB | Each book's free-form `attributes` document | Keys differ per media type (`pages`, `narrator`, `file_size_mb`) — a schema per row is exactly what SQL is bad at |
-| Neo4j | `BORROWED` and `FOLLOWS` edges | Recommendations and series order are traversals, not joins |
+| MongoDB | Each book's `attributes` document and each member's reader profile | Keys differ per record (`pages`, `narrator`, `course`, `accessibility`) — a schema per row is exactly what SQL is bad at |
+| Neo4j | `BORROWED`, `FOLLOWS` and `KNOWS` edges | Recommendations, series order and friends-of-friends are traversals, not joins |
+
+Both routed DocTypes are split the same way. **Library Member** is the clearest
+illustration:
+
+| Field | Lives in |
+| --- | --- |
+| Member name, email, phone, membership type, joined on, status | MariaDB columns |
+| Reader profile — favourite genres, reading goal, accessibility needs, anything else | MongoDB document |
+| Knows / friends of friends | Neo4j `KNOWS` edges — no child table, no join table |
 
 ## What it demonstrates
 
@@ -49,6 +58,13 @@ polystore/
   tests/         end-to-end tests against both live stores
 ```
 
+## Documentation
+
+| | |
+| --- | --- |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Using and demoing the app — every screen, how to inspect the raw databases, a five-minute demo script |
+| [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | How the three-engine split is built — Frappe hooks, the adapter contract, the traversal API, and the gotcha catalogue |
+
 ## Setup
 
 Requires a Frappe v15+ bench, MongoDB and Neo4j.
@@ -66,7 +82,7 @@ bench new-site polystore.localhost --install-app polystore
 # wiring
 bench --site polystore.localhost set-config polystore_mongo_uri "mongodb://localhost:27017"
 bench --site polystore.localhost set-config polystore_mongo_db "polystore"
-bench --site polystore.localhost set-config -p polystore_routing '{"Library Book": "mongo"}'
+bench --site polystore.localhost set-config -p polystore_routing '{"Library Book": "mongo", "Library Member": "mongo"}'
 bench --site polystore.localhost set-config neo4j_uri "bolt://localhost:7687"
 bench --site polystore.localhost set-config neo4j_user "neo4j"
 bench --site polystore.localhost set-config neo4j_password "<password>"
@@ -85,8 +101,9 @@ Then open the desk at **http://polystore.localhost:8000/app/polystore**:
   recommendations.
 - **Library Book form** — the MongoDB document is editable inline under *Flexible
   Attributes*; the *Graph* menu runs the traversals against Neo4j.
-- **Library Member form** — recommendations, and the shortest path between two
-  readers through the books they share.
+- **Library Member form** — SQL fields at the top, the MongoDB profile in the
+  middle (*Edit Profile*), and Neo4j connections at the bottom (*Manage
+  Connections*), plus recommendations and the shortest path between two readers.
 
 There is also a public page at **/polystore** for a read-only tour.
 

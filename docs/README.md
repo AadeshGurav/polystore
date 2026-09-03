@@ -1,4 +1,12 @@
-# Design notes
+# Documentation
+
+| Document | Read it if you… |
+| --- | --- |
+| [USER_GUIDE.md](USER_GUIDE.md) | are using or demoing the app — screens, what each panel proves, how to look at the raw databases, and a five-minute demo script |
+| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | have to build on it or rebuild it — how MongoDB and Neo4j sit alongside Frappe's SQL, every hook we use, and the eleven gotchas that cost us time |
+| [../README.md](../README.md) | just want to install and run it |
+
+## Design notes
 
 The two feasibility notes this app implements:
 
@@ -10,5 +18,5 @@ The two feasibility notes this app implements:
   `polystore/graph/`.
 
 Where this POC departs from the notes, it is deliberate: the notes recommend
-deferring adoption until a workload justifies it, whereas this repository exists
-to prove the mechanism works end to end.
+deferring adoption until a workload justifies it, whereas this repository
+exists to prove the mechanism works end to end.

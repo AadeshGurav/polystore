@@ -164,3 +164,80 @@ def save_attributes(book: str, payload: str) -> dict:
 
 	store.put("Library Book", book, parsed)
 	return parsed
+
+
+@frappe.whitelist()
+def save_member_profile(member: str, payload: str) -> dict:
+	"""Write a member's free-form profile into the document store."""
+	frappe.has_permission("Library Member", ptype="write", doc=member, throw=True)
+
+	document = frappe.get_doc("Library Member", member)
+	document.set("attributes_json", payload)
+	parsed = document.parsed_payload()
+
+	store = store_for("Library Member")
+	if not store:
+		frappe.throw(_("Library Member is not routed to a document store."))
+
+	store.put("Library Member", member, parsed)
+	return parsed
+
+
+@frappe.whitelist()
+def member_connections(member: str) -> dict:
+	"""Direct KNOWS edges plus two-hop suggestions, read from the graph."""
+	frappe.has_permission("Library Member", doc=member, throw=True)
+	return {
+		"connections": traversal.connections(member),
+		"suggestions": traversal.friends_of_friends(member),
+	}
+
+
+@frappe.whitelist()
+def add_member_connection(member: str, other: str) -> dict:
+	"""Create a KNOWS edge. It exists in Neo4j only — there is no SQL row."""
+	frappe.has_permission("Library Member", ptype="write", doc=member, throw=True)
+
+	if member == other:
+		frappe.throw(_("A member cannot be connected to themselves."))
+
+	if not frappe.db.exists("Library Member", other):
+		frappe.throw(_("{0} is not a member.").format(other))
+
+	traversal.connect_members(member, other)
+	return member_connections(member)
+
+
+@frappe.whitelist()
+def remove_member_connection(member: str, other: str) -> dict:
+	frappe.has_permission("Library Member", ptype="write", doc=member, throw=True)
+	traversal.disconnect_members(member, other)
+	return member_connections(member)
+
+
+@frappe.whitelist()
+def member_across_stores(member: str) -> dict:
+	"""The same member as each engine sees them."""
+	frappe.has_permission("Library Member", doc=member, throw=True)
+
+	row = frappe.db.get_value(
+		"Library Member",
+		member,
+		["name", "member_name", "email", "phone", "membership_type", "joined_on", "status"],
+		as_dict=True,
+	)
+
+	store = store_for("Library Member")
+	document = store.get("Library Member", member) if store else {}
+
+	try:
+		graph = {
+			"knows": traversal.connections(member),
+			"suggestions": traversal.friends_of_friends(member, 3),
+			"borrowed": frappe.get_all("Book Loan", filters={"member": member}, pluck="book"),
+		}
+		error = None
+	except Exception as exc:
+		graph, error = {}, str(exc)
+
+	return {"sql": row, "mongo": document, "graph": graph, "graph_error": error}
