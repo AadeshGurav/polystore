@@ -143,3 +143,24 @@ def stats() -> dict:
 		"mongo": {"documents": documents, "error": document_error},
 		"graph": {"nodes": nodes, "edges": edges, "error": graph_error},
 	}
+
+
+@frappe.whitelist()
+def save_attributes(book: str, payload: str) -> dict:
+	"""Write the flexible attributes straight into the document store.
+
+	The field is virtual, so the desk form renders it read-only — editing goes
+	through here, which is honest about where the data actually lives.
+	"""
+	frappe.has_permission("Library Book", ptype="write", doc=book, throw=True)
+
+	document = frappe.get_doc("Library Book", book)
+	document.set("attributes_json", payload)
+	parsed = document.parsed_payload()
+
+	store = store_for("Library Book")
+	if not store:
+		frappe.throw(_("Library Book is not routed to a document store."))
+
+	store.put("Library Book", book, parsed)
+	return parsed

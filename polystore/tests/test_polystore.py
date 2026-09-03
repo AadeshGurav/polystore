@@ -14,7 +14,25 @@ from polystore.overrides.poly_document import find_orphans
 from polystore.stores.registry import backend_for, store_for
 
 
-class TestDocumentStoreRouting(IntegrationTestCase):
+class PolystoreTestCase(IntegrationTestCase):
+	"""SQL writes roll back after a test; the secondary stores do not.
+
+	Anything a test wrote to MongoDB is removed here so the document count a
+	demo shows stays honest.
+	"""
+
+	def tearDown(self):
+		store = store_for("Library Book")
+		if not store:
+			return
+
+		for payload in store.find("Library Book", {}, limit=200):
+			name = payload.get("_name") or ""
+			if name.startswith("Test "):
+				store.delete("Library Book", name)
+
+
+class TestDocumentStoreRouting(PolystoreTestCase):
 	def test_library_book_is_routed_to_mongo(self):
 		self.assertEqual(backend_for("Library Book"), "mongo")
 		self.assertIsNone(backend_for("Library Member"))
@@ -47,7 +65,7 @@ class TestDocumentStoreRouting(IntegrationTestCase):
 		self.assertNotIn("Test Reconciled", find_orphans("Library Book"))
 
 
-class TestGraphTraversal(IntegrationTestCase):
+class TestGraphTraversal(PolystoreTestCase):
 	def test_series_edge_and_capped_closure(self):
 		first = _make_book("Test Volume One", {})
 		second = _make_book("Test Volume Two", {}, follows=first.name)

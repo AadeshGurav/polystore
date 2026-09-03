@@ -15,19 +15,80 @@
   "follows",
   "attributes_section",
   "attributes_help",
+  "edit_attributes_btn",
   "attributes_json"
  ],
  "fields": [
-  {"fieldname": "title", "fieldtype": "Data", "label": "Title", "reqd": 1, "unique": 1, "in_list_view": 1},
-  {"fieldname": "author", "fieldtype": "Data", "label": "Author", "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "isbn", "fieldtype": "Data", "label": "ISBN"},
-  {"fieldname": "column_break_meta", "fieldtype": "Column Break"},
-  {"fieldname": "media_type", "fieldtype": "Select", "label": "Media Type", "options": "Book\nEbook\nAudiobook\nJournal", "default": "Book", "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Available\nOn Loan", "default": "Available", "in_list_view": 1},
-  {"fieldname": "follows", "fieldtype": "Link", "label": "Follows (previous in series)", "options": "Library Book", "description": "Stored as a FOLLOWS edge in Neo4j. Cycles are rejected on save."},
-  {"fieldname": "attributes_section", "fieldtype": "Section Break", "label": "Flexible Attributes"},
-  {"fieldname": "attributes_help", "fieldtype": "HTML", "options": "<p class='text-muted small'>These attributes are stored in MongoDB, not in a SQL column. Any keys are allowed and they may differ from one record to the next.</p>"},
-  {"fieldname": "attributes_json", "fieldtype": "Code", "label": "Attributes (JSON)", "is_virtual": 1}
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Data",
+   "label": "Author",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "isbn",
+   "fieldtype": "Data",
+   "label": "ISBN"
+  },
+  {
+   "fieldname": "column_break_meta",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "media_type",
+   "fieldtype": "Select",
+   "label": "Media Type",
+   "options": "Book\nEbook\nAudiobook\nJournal",
+   "default": "Book",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Available\nOn Loan",
+   "default": "Available",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "follows",
+   "fieldtype": "Link",
+   "label": "Follows (previous in series)",
+   "options": "Library Book",
+   "description": "Stored as a FOLLOWS edge in Neo4j. Cycles are rejected on save."
+  },
+  {
+   "fieldname": "attributes_section",
+   "fieldtype": "Section Break",
+   "label": "Flexible Attributes"
+  },
+  {
+   "fieldname": "attributes_help",
+   "fieldtype": "HTML",
+   "options": "<p class='text-muted small'>Stored in MongoDB, not in a SQL column. Any keys are allowed and they may differ from one record to the next.</p>"
+  },
+  {
+   "fieldname": "edit_attributes_btn",
+   "fieldtype": "Button",
+   "label": "Edit Attributes"
+  },
+  {
+   "fieldname": "attributes_json",
+   "fieldtype": "Code",
+   "label": "Attributes (JSON)",
+   "is_virtual": 1,
+   "description": "Read-only here because this field has no SQL column. Use Edit Attributes to write to MongoDB."
+  }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
@@ -37,7 +98,18 @@
  "name": "Library Book",
  "owner": "Administrator",
  "permissions": [
-  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1}
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
